@@ -118,6 +118,11 @@ window.addEventListener('DOMContentLoaded', _ => {
     });
 
 
+    // Webcam
+    let mediaRecorder;
+    let recordedBlobs;
+
+
     // Speech Synthesis
     populateVoiceList();
     speechSynthesis.onvoiceschanged = _ => populateVoiceList();
@@ -164,7 +169,7 @@ window.addEventListener('DOMContentLoaded', _ => {
         SpeechRecognition = webkitSpeechRecognition || SpeechRecognition;
         const recognition = new SpeechRecognition();
 
-        recognition.lang = "ja";
+        recognition.lang = 'ja';
         recognition.interimResults = true;
         recognition.continuous = true;
 
@@ -182,7 +187,7 @@ window.addEventListener('DOMContentLoaded', _ => {
                     interim = transcript;
                 }
             }
-            result.innerHTML = fixed + '<i style="color:#ddd;">' + interim + '</i>';
+            result.innerHTML = fixed + '<i style="color: #ddd; ">' + interim + '</i>';
         };
 
         document.getElementById('speechRecognitionStart').addEventListener('click', _ => {
@@ -196,4 +201,79 @@ window.addEventListener('DOMContentLoaded', _ => {
         document.getElementById('speechRecognitionStart').setAttribute('disabled', 'disabled');
         document.getElementById('speechRecognitionStop').setAttribute('disabled', 'disabled');
     }
+
+
+    // Webcam
+    document.getElementById('webcamStart').addEventListener('click', () => {
+        const constraints = {
+            video: {
+                width: { min: 640 },
+                height: { min: 360 }
+            }
+        };
+
+        navigator.mediaDevices
+            .getUserMedia(constraints)
+            .then((mediaStream) => {
+                document.getElementById('webcamRecord').disabled = false;
+                document.getElementById('webcamVideo').srcObject = mediaStream;
+                window.stream = mediaStream;
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    });
+
+    document.getElementById('webcamRecord').addEventListener('click', () => {
+        if (document.getElementById('webcamRecord').textContent === 'Record') {
+            recordedBlobs = [];
+
+            try {
+                mediaRecorder = new MediaRecorder(window.stream);
+            } catch (error) {
+                console.error(error);
+                return;
+            }
+
+            document.getElementById('webcamDownload').disabled = true;
+            document.getElementById('webcamRecord').textContent = 'Stop';
+
+            mediaRecorder.onstop = (event) => {
+                console.log(event);
+            };
+
+            mediaRecorder.ondataavailable = (event) => {
+                // console.log(event);
+
+                if (event.data && event.data.size > 0) {
+                    recordedBlobs.push(event.data);
+                }
+            };
+
+            mediaRecorder.start(10);
+
+        } else {
+            mediaRecorder.stop();
+
+            document.getElementById('webcamDownload').disabled = false;
+            document.getElementById('webcamRecord').textContent = 'Record';
+        }
+    });
+
+    document.getElementById('webcamDownload').addEventListener('click', () => {
+        const blob = new Blob(recordedBlobs, { type: 'video/webm' });
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'rec.webm';
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 100);
+    });
 });
