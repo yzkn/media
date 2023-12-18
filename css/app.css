@@ -1,5 +1,14 @@
 /* Copyright (c) 2023 YA-androidapp(https://github.com/yzkn) All rights reserved. */
 
-#image {
-    width: 80%;
+.view-media {
+    height: auto;
+    max-width: 100%;
+    width: 100%;
+}
+
+#speechRecognitionResult {
+    border: ridge;
+    height: auto;
+    min-height: 400px;
+    width: 100%;
 }
