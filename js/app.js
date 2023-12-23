@@ -109,11 +109,25 @@ window.addEventListener('DOMContentLoaded', _ => {
         }
     });
 
-    document.getElementById('openMedia').addEventListener('change', (event) => {
-        if (event.target.files.length > 0) {
-            Array.from(event.target.files).forEach(file => {
-                loadFile(file);
-            });
+
+    // SVG
+    document.getElementById('svgPreviewGenerate').addEventListener('click', (event) => {
+        const tag = document.getElementById('svgPreviewSvgTag').value;
+        const oParser = new DOMParser();
+        const doc = oParser.parseFromString(tag, 'image/svg+xml');
+        const failed = doc.querySelector("parsererror");
+
+        if (failed) {
+            console.log('Parser error: ', failed);
+            // console.log('Parser error: ', failed.childNodes[0].data);
+            // console.log('Parser error: ', failed.childNodes[1].textContent);
+
+            document.getElementById('svgPreviewError').style.display = 'block';
+            document.getElementById('svgPreviewError').innerHTML = failed.childNodes[0].data + '<br><br>' + failed.childNodes[1].textContent.replace(' ', '&nbsp;').replace('\n', '<br>');
+        } else {
+            document.getElementById('svgPreviewError').style.display = 'none';
+            document.getElementById('svgPreviewError').innerText = '';
+            document.getElementById('svgPreviewImage').src = 'data:image/svg+xml;charset=UTF-8,' + tag;
         }
     });
 

@@ -49,6 +49,46 @@
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseSvgPreview" aria-expanded="false" aria-controls="collapseSvgPreview">
+                        SVG Preview
+                    </button>
+                </h2>
+                <div id="collapseSvgPreview" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+                        <div class="row mt-5">
+                            <div class="col-12">
+                                <textarea class="form-control" id="svgPreviewSvgTag" name="svgPreviewSvgTag" rows="10"
+                                    placeholder="&lt;svg version=&quot;1.1&quot;
+        width=&quot;300&quot; height=&quot;200&quot;
+        xmlns=&quot;http://www.w3.org/2000/svg&quot;&gt;
+    &lt;rect width=&quot;100%&quot; height=&quot;100%&quot; fill=&quot;red&quot; /&gt;
+    &lt;circle cx=&quot;150&quot; cy=&quot;100&quot; r=&quot;80&quot; fill=&quot;green&quot; /&gt;
+    &lt;text x=&quot;150&quot; y=&quot;125&quot; font-size=&quot;60&quot; text-anchor=&quot;middle&quot; fill=&quot;white&quot;&gt;SVG&lt;/text&gt;
+&lt;/svg&gt;">&lt;svg version=&quot;1.1&quot;
+        width=&quot;300&quot; height=&quot;200&quot;
+        xmlns=&quot;http://www.w3.org/2000/svg&quot;&gt;
+    &lt;rect width=&quot;100%&quot; height=&quot;100%&quot; fill=&quot;red&quot; /&gt;
+    &lt;circle cx=&quot;150&quot; cy=&quot;100&quot; r=&quot;80&quot; fill=&quot;green&quot; /&gt;
+    &lt;text x=&quot;150&quot; y=&quot;125&quot; font-size=&quot;60&quot; text-anchor=&quot;middle&quot; fill=&quot;white&quot;&gt;SVG&lt;/text&gt;
+&lt;/svg&gt;</textarea>
+                                <button type="button" class="btn btn-primary mt-2" id="svgPreviewGenerate"
+                                    name="svgPreviewGenerate">Generate</button>
+                            </div>
+                        </div>
+                        <div class="row mt-5">
+                            <div class="col-12">
+                                <div class="alert alert-danger" role="alert" id="svgPreviewError"
+                                    name="svgPreviewError"></div>
+
+                                <img class="img-fluid img-thumbnail" id="svgPreviewImage" name="svgPreviewImage">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                         data-bs-target="#collapseSpeechSynthesis" aria-expanded="false"
                         aria-controls="collapseSpeechSynthesis">
                         Speech Synthesis
