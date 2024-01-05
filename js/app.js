@@ -99,6 +99,194 @@ const populateVoiceList = () => {
 };
 
 
+// Sound recorder
+let analyserSoundRecorder = null;
+let audioCtxSoundRecorder = null;
+let biquadFilterSoundRecorder = null;
+let convolverSoundRecorder = null;
+let distortionSoundRecorder = null;
+let gainNodeSoundRecorder = null;
+let localStreamSoundRecorder = null;
+let mediaRecorderSoundRecorder = null;
+let recordedChunksSoundRecorder = [];
+let recordedMimeTypeSoundRecorder = "";
+let sourceSoundRecorder = null;
+
+let intendedWidth;
+let canvasSoundRecorder;
+let canvasCtxSoundRecorder;
+
+const visualizeSoundRecorder = _ => {
+    let width = canvasSoundRecorder.width;
+    let height = canvasSoundRecorder.height;
+
+    analyserSoundRecorder.fftSize = 256;
+    let bufferLength = analyserSoundRecorder.frequencyBinCount;
+    let dataArray = new Float32Array(bufferLength);
+
+    canvasCtxSoundRecorder.clearRect(0, 0, width, height);
+
+    function drawSoundRecorder() {
+        requestAnimationFrame(drawSoundRecorder);
+
+        analyserSoundRecorder.getFloatFrequencyData(dataArray);
+
+        canvasCtxSoundRecorder.fillStyle = 'rgb(0, 0, 0)';
+        canvasCtxSoundRecorder.fillRect(0, 0, width, height);
+
+        let barWidth = (width / bufferLength) * 2.5;
+        let barHeight;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            barHeight = (dataArray[i] + 140) * 2;
+
+            canvasCtxSoundRecorder.fillStyle = 'rgb(' + Math.floor(barHeight + 100) + ',50,50)';
+            canvasCtxSoundRecorder.fillRect(x, height - barHeight / 2, barWidth, barHeight / 2);
+
+            x += barWidth + 1;
+        }
+    };
+
+    drawSoundRecorder();
+};
+
+const mimetype2extSoundRecorder = (audioType) => {
+    let extension = "";
+    const matches = audioType.match(/audio\/([^;]+)/);
+
+    if (matches) {
+        extension = matches[1];
+    }
+
+    return "." + extension;
+};
+
+const startRecordingSoundRecorder = _ => {
+    if (navigator.mediaDevices) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function (stream) {
+                localStreamSoundRecorder = stream;
+
+                if (audioCtxSoundRecorder == null) {
+                    audioCtxSoundRecorder = new (window.AudioContext || window.webkitAudioContext)();
+                    sourceSoundRecorder = audioCtxSoundRecorder.createMediaStreamSource(stream);
+                    analyserSoundRecorder = audioCtxSoundRecorder.createAnalyser();
+                    analyserSoundRecorder.minDecibels = -90;
+                    analyserSoundRecorder.maxDecibels = -10;
+                    analyserSoundRecorder.smoothingTimeConstant = 0.85;
+                    distortionSoundRecorder = audioCtxSoundRecorder.createWaveShaper();
+                    gainNodeSoundRecorder = audioCtxSoundRecorder.createGain();
+                    biquadFilterSoundRecorder = audioCtxSoundRecorder.createBiquadFilter();
+                    convolverSoundRecorder = audioCtxSoundRecorder.createConvolver();
+                    sourceSoundRecorder.connect(analyserSoundRecorder);
+                    analyserSoundRecorder.connect(distortionSoundRecorder);
+                    distortionSoundRecorder.connect(biquadFilterSoundRecorder);
+                    biquadFilterSoundRecorder.connect(convolverSoundRecorder);
+                    convolverSoundRecorder.connect(gainNodeSoundRecorder);
+                    gainNodeSoundRecorder.connect(audioCtxSoundRecorder.destination);
+                    visualizeSoundRecorder();
+                }
+
+                if (mediaRecorderSoundRecorder == null) {
+                    let mimeTypeValue = "audio/" + document.getElementById("mimetype").value;
+                    if (MediaRecorder.isTypeSupported(mimeTypeValue) == false) {
+                        mimeTypeValue = "audio/webm";
+                        document.getElementById("mimetype").value = "webm";
+                        document.getElementById("mimetype-alert").style.display = "block";
+                    }
+                    mediaRecorderSoundRecorder = new MediaRecorder(stream, {
+                        mimeType: mimeTypeValue
+                    });
+                    mediaRecorderSoundRecorder.start();
+                } else {
+                    if (mediaRecorderSoundRecorder.state == "paused") {
+                        mediaRecorderSoundRecorder.resume();
+                    } else if (mediaRecorderSoundRecorder.state == "inactive") {
+                        mediaRecorderSoundRecorder.start();
+                    }
+                }
+
+                // mediaRecorderが録音中に変わったら
+                if (mediaRecorderSoundRecorder.state == "recording") {
+                    document.getElementById("record").innerHTML = "<i class=\"bi-pause-circle\"></i>";
+                    document.getElementById("stop").removeAttribute("disabled");
+                }
+            })
+            .catch(function (e) {
+                console.log(e);
+            });
+    }
+};
+
+const pauseRecordingSoundRecorder = _ => {
+    if (mediaRecorderSoundRecorder) {
+        if (mediaRecorderSoundRecorder.state == "recording") {
+            mediaRecorderSoundRecorder.pause();
+        }
+
+        // mediaRecorderが一時停止に変わったら
+        if (mediaRecorderSoundRecorder.state == "paused") {
+            document.getElementById("record").innerHTML = "<i class=\"bi-record-circle\"></i>";
+        }
+    }
+};
+
+const stopRecordingSoundRecorder = _ => {
+    if (mediaRecorderSoundRecorder) {
+        if (mediaRecorderSoundRecorder.state == "paused" || mediaRecorderSoundRecorder.state == "recording") {
+            mediaRecorderSoundRecorder.stop();
+            mediaRecorderSoundRecorder.ondataavailable = function (e) {
+                if (e.data.size > 0) {
+                    recordedMimeTypeSoundRecorder = e.data.type;
+                    recordedChunksSoundRecorder.push(e.data);
+
+                    document.getElementById("player").src = URL.createObjectURL(e.data);
+                    document.getElementById("player").style["pointer-events"] = "auto";
+                    document.getElementById("record").innerHTML = "<i class=\"bi-record-circle\"></i>";
+                    document.getElementById("save").removeAttribute("disabled");
+
+                    const blob = new Blob(recordedChunksSoundRecorder, { type: recordedMimeTypeSoundRecorder });
+                    let reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onload = () => {
+                        console.log("Base64");
+                        // console.log("Base64", reader.result);
+                    };
+                }
+            }
+        }
+    }
+};
+
+const saveFileSoundRecorder = _ => {
+    let blob = new Blob(recordedChunksSoundRecorder, {
+        type: recordedMimeTypeSoundRecorder
+    });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    a.href = url;
+    a.download = "record" + mimetype2extSoundRecorder(recordedMimeTypeSoundRecorder);
+    a.click();
+    window.URL.revokeObjectURL(url);
+};
+
+const initializeVisualizer = _ => {
+    intendedWidth = document.getElementById('visualizer-wrapper').clientWidth;
+    canvasSoundRecorder = document.getElementById('visualizer');
+    canvasCtxSoundRecorder = canvasSoundRecorder.getContext("2d");
+    canvasSoundRecorder.setAttribute('width', intendedWidth);
+    canvasCtxSoundRecorder.fillStyle = 'rgb(0, 0, 0)';
+    canvasCtxSoundRecorder.fillRect(0, 0, canvasSoundRecorder.width, canvasSoundRecorder.height);
+};
+
+const toggleVisualizerVisiblity = (show = true) => {
+    document.getElementById('visualizer-wrapper').style.visibility = show ? 'block' : 'hidden';
+};
+
+
 window.addEventListener('DOMContentLoaded', _ => {
     // Media
     document.getElementById('openMedia').addEventListener('change', (event) => {
@@ -289,5 +477,32 @@ window.addEventListener('DOMContentLoaded', _ => {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         }, 100);
+    });
+
+
+    // Sound recorder
+    document.getElementById("record").addEventListener("click", function () {
+        if (mediaRecorderSoundRecorder && mediaRecorderSoundRecorder.state == "recording") {
+            toggleVisualizerVisiblity(false);
+            pauseRecordingSoundRecorder();
+        } else {
+            toggleVisualizerVisiblity(true);
+            initializeVisualizer();
+            startRecordingSoundRecorder();
+        }
+    });
+
+    document.getElementById("stop").addEventListener("click", function () {
+        toggleVisualizerVisiblity(false);
+        stopRecordingSoundRecorder();
+    });
+
+    document.getElementById("save").addEventListener("click", function () {
+        saveFileSoundRecorder();
+    });
+
+    let alertList = document.querySelectorAll('.alert')
+    alertList.forEach(function (alert) {
+        new bootstrap.Alert(alert)
     });
 });
