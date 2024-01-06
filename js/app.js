@@ -108,8 +108,8 @@ let distortionSoundRecorder = null;
 let gainNodeSoundRecorder = null;
 let localStreamSoundRecorder = null;
 let mediaRecorderSoundRecorder = null;
-let recordedChunksSoundRecorder = [];
-let recordedMimeTypeSoundRecorder = "";
+let recordedBlobSoundRecorder = null;
+let recordedMimeTypeSoundRecorder = null;
 let sourceSoundRecorder = null;
 
 let intendedWidth;
@@ -238,21 +238,22 @@ const stopRecordingSoundRecorder = _ => {
             mediaRecorderSoundRecorder.stop();
             mediaRecorderSoundRecorder.ondataavailable = function (e) {
                 if (e.data.size > 0) {
+                    recordedBlobSoundRecorder = e.data;
                     recordedMimeTypeSoundRecorder = e.data.type;
-                    recordedChunksSoundRecorder.push(e.data);
 
                     document.getElementById("player").src = URL.createObjectURL(e.data);
                     document.getElementById("player").style["pointer-events"] = "auto";
                     document.getElementById("record").innerHTML = "<i class=\"bi-record-circle\"></i>";
                     document.getElementById("save").removeAttribute("disabled");
 
-                    const blob = new Blob(recordedChunksSoundRecorder, { type: recordedMimeTypeSoundRecorder });
-                    let reader = new FileReader();
-                    reader.readAsDataURL(blob);
-                    reader.onload = () => {
-                        console.log("Base64");
-                        // console.log("Base64", reader.result);
-                    };
+                    let url = URL.createObjectURL(e.data);
+                    let a = document.createElement("a");
+                    document.body.appendChild(a);
+                    a.style = "display: none";
+                    a.href = url;
+                    a.download = "record" + mimetype2extSoundRecorder(e.data.type);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
                 }
             }
         }
@@ -260,15 +261,12 @@ const stopRecordingSoundRecorder = _ => {
 };
 
 const saveFileSoundRecorder = _ => {
-    let blob = new Blob(recordedChunksSoundRecorder, {
-        type: recordedMimeTypeSoundRecorder
-    });
-    let url = URL.createObjectURL(blob);
+    let url = URL.createObjectURL(recordedBlobSoundRecorder);
     let a = document.createElement("a");
     document.body.appendChild(a);
     a.style = "display: none";
     a.href = url;
-    a.download = "record" + mimetype2extSoundRecorder(recordedMimeTypeSoundRecorder);
+    a.download = "record" + mimetype2extSoundRecorder(recordedBlobSoundRecorder.type);
     a.click();
     window.URL.revokeObjectURL(url);
 };
@@ -282,8 +280,12 @@ const initializeVisualizer = _ => {
     canvasCtxSoundRecorder.fillRect(0, 0, canvasSoundRecorder.width, canvasSoundRecorder.height);
 };
 
-const toggleVisualizerVisiblity = (show = true) => {
-    document.getElementById('visualizer-wrapper').style.visibility = show ? 'block' : 'hidden';
+const toggleVisualizerVisiblity = (show) => {
+    if (show) {
+        document.getElementById('visualizer-wrapper').classList.remove('hidden');
+    } else {
+        document.getElementById('visualizer-wrapper').classList.add('hidden');
+    }
 };
 
 

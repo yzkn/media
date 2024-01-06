@@ -20,3 +20,7 @@
 #svgPreviewImage {
     width: 100%;
 }
+
+#visualizer-wrapper.hidden {
+    display: none;
+}
